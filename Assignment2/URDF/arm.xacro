@@ -1,0 +1,148 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="robot_arm" params="base_height link1_length link2_length">
+
+    <!-- Vertical support column -->
+    <link name="arm_column_link">
+      <inertial>
+        <origin xyz="0 0 ${link1_length/2}"/>
+        <mass value="2.0"/>
+        <inertia
+          ixx="${(2.0/12.0)*(3*0.045*0.045 + link1_length*link1_length)}"
+          ixy="0" ixz="0"
+          iyy="${(2.0/12.0)*(3*0.045*0.045 + link1_length*link1_length)}"
+          iyz="0"
+          izz="${0.5*2.0*0.045*0.045}"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 ${link1_length/2}"/>
+        <geometry>
+          <cylinder radius="0.045" length="${link1_length}"/>
+        </geometry>
+        <material name="dark_grey">
+          <color rgba="0.25 0.25 0.25 1"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${link1_length/2}"/>
+        <geometry>
+          <cylinder radius="0.045" length="${link1_length}"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="column_mount_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="arm_column_link"/>
+      <origin xyz="0 0 ${base_height}"/>
+    </joint>
+
+    <!-- Vertical carriage -->
+    <link name="vertical_slide_link">
+      <inertial>
+        <mass value="1.0"/>
+        <inertia ixx="0.00183" ixy="0" ixz="0"
+                 iyy="0.00183" iyz="0" izz="0.00240"/>
+      </inertial>
+      <visual>
+        <geometry><box size="0.12 0.12 0.10"/></geometry>
+        <material name="blue">
+          <color rgba="0.1 0.3 0.8 1"/>
+        </material>
+      </visual>
+      <collision>
+        <geometry><box size="0.12 0.12 0.10"/></geometry>
+      </collision>
+    </link>
+
+    <joint name="vertical_lift_joint" type="prismatic">
+      <parent link="arm_column_link"/>
+      <child link="vertical_slide_link"/>
+      <axis xyz="0 0 1"/>
+      <limit lower="0.10" upper="${link1_length - 0.05}"
+             effort="500" velocity="0.5"/>
+    </joint>
+
+    <!-- Fixed outer rail -->
+    <link name="horizontal_outer_link">
+      <inertial>
+        <origin xyz="${link2_length/2} 0 0"/>
+        <mass value="1.2"/>
+        <inertia
+          ixx="${(1.2/12.0)*(0.09*0.09 + 0.09*0.09)}"
+          ixy="0" ixz="0"
+          iyy="${(1.2/12.0)*(link2_length*link2_length + 0.09*0.09)}"
+          iyz="0"
+          izz="${(1.2/12.0)*(link2_length*link2_length + 0.09*0.09)}"/>
+      </inertial>
+      <visual>
+        <origin xyz="${link2_length/2} 0 0"/>
+        <geometry>
+          <box size="${link2_length} 0.09 0.09"/>
+        </geometry>
+        <material name="dark_blue">
+          <color rgba="0.05 0.15 0.45 1"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="${link2_length/2} 0 0"/>
+        <geometry>
+          <box size="${link2_length} 0.09 0.09"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="outer_rail_joint" type="fixed">
+      <parent link="vertical_slide_link"/>
+      <child link="horizontal_outer_link"/>
+    </joint>
+
+    <!-- Moving inner telescopic section -->
+    <link name="horizontal_extension_link">
+      <inertial>
+        <origin xyz="${link2_length/2} 0 0"/>
+        <mass value="0.8"/>
+        <inertia
+          ixx="${(0.8/12.0)*(0.055*0.055 + 0.055*0.055)}"
+          ixy="0" ixz="0"
+          iyy="${(0.8/12.0)*(link2_length*link2_length + 0.055*0.055)}"
+          iyz="0"
+          izz="${(0.8/12.0)*(link2_length*link2_length + 0.055*0.055)}"/>
+      </inertial>
+      <visual>
+        <origin xyz="${link2_length/2} 0 0"/>
+        <geometry>
+          <box size="${link2_length} 0.055 0.055"/>
+        </geometry>
+        <material name="blue">
+          <color rgba="0.1 0.3 0.8 1"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="${link2_length/2} 0 0"/>
+        <geometry>
+          <box size="${link2_length} 0.055 0.055"/>
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="horizontal_extension_joint" type="prismatic">
+      <parent link="horizontal_outer_link"/>
+      <child link="horizontal_extension_link"/>
+      <axis xyz="1 0 0"/>
+      <limit lower="0.0" upper="${link2_length}"
+             effort="300" velocity="0.5"/>
+    </joint>
+
+    <!-- End effector -->
+    <link name="arm_tip_link"/>
+
+    <joint name="arm_tip_joint" type="fixed">
+      <parent link="horizontal_extension_link"/>
+      <child link="arm_tip_link"/>
+      <origin xyz="${link2_length} 0 0"/>
+    </joint>
+
+  </xacro:macro>
+</robot>
